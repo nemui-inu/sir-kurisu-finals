@@ -48,6 +48,7 @@ void add_employee();
 int get_input_count();
 void get_employee_details();
 void read_employee_id(char * buff, const int size);
+bool id_is_invalid(char * buff, const int size);
 void read_employee_fname(char * buff, const int size);
 void read_employee_lname(char * buff, const int size);
 void read_employee_dept(char * buff);
@@ -60,13 +61,193 @@ void set_table_dimensions();
 void draw_border(int length);
 void add_space(const int width, int deduct);
 int retrieve_from_file();
+void clean_buffer(char * buffer, int size);
 void print_line(employee details);
 
 void update_employee();
+void ue_get_id(char * id_buff, int id_buff_size);
+void ue_grab_id(char * id_buff, int id_buff_size);
+void ue_extract_line(int which_line, employee * details);
+void ue_line_to_struct(char * buff, int size, employee * details);
+void ue_show_details(employee details);
+void ue_navigate_sd(employee details);
+void ue_update_id(employee details);
+
 void remove_employee();
 
 int main(){
   (void)menu();
+}
+
+void ue_update_id(employee details){
+
+}
+
+void ue_navigate_sd(employee details){
+  bool invalid = true;
+  for(int i = 0; i < 10; i++){
+    switch((char)getch()){
+      case '1':
+        invalid = false;
+        (void)ue_update_id(details);
+        break;
+      case '2':
+        invalid = false;
+        break;
+      case '3':
+        invalid = false;
+        break;
+      case '4':
+        invalid = false;
+        break;
+      case '5':
+        invalid = false;
+        break;
+      case '6':
+      case 27:
+        invalid = false;
+        (void)menu();
+        break;
+      default:
+        continue;
+    }
+  }
+  if(invalid){
+    (void)printf("(!) Too many invalid attempts. Returning to menu ...");
+    (void)getch();
+    (void)menu();
+  }
+}
+
+void show_details(employee details){
+  (void)system("cls");
+  (void)printf("\n(i) Select which field you wish to edit.\n");
+  (void)printf("\n[1] Employee ID : %s", details.id);
+  (void)printf("\n[2] Employee Name : %s", details.name);
+  (void)printf("\n[3] Employee Department : %s", details.department);
+  (void)printf("\n[4] Employee Position : %s", details.position);
+  (void)printf("\n[5] Employee Gender : %s\n", details.gender);
+  (void)printf("\n[6] Cancel : %s", details.gender);
+}
+
+void ue_line_to_struct(char * buff, int size, employee * details){
+  buff[size - 1] = '\0';
+  int comma = 0;
+  int str_i = 0;
+  for(int i = 0; i < size; i++){
+    if(buff[i] == ','){
+      comma++;
+      str_i = 0;
+      continue;
+    }
+    switch(comma){
+      case 0:
+        details->id[str_i] = buff[i];
+        str_i++;
+        break;
+      case 1:
+        details->name[str_i] = buff[i];
+        str_i++;
+        break;
+      case 2:
+        details->department[str_i] = buff[i];
+        str_i++;
+        break;
+      case 3:
+        details->position[str_i] = buff[i];
+        str_i++;
+        break;
+      case 4:
+        details->gender[str_i] = buff[i];
+        str_i++;
+        break;
+      default:
+        (void)printf("\n\n(!) Unexpected ',' character at file. Exiting program ...");
+        (void)getch();
+        (void)exit(1);
+    }
+  }
+}
+
+void ue_extract_line(int which_line, employee * details){
+  // get line from file
+  char buff[max];
+  int line_number = 0;
+  bool line_is_header = true;
+  FILE * fxtr = (FILE *)fopen("records.csv", "r");
+  while((char *)fgets(buff, max, fxtr) != NULL){
+    if(line_is_header){
+      line_is_header = false;
+      continue;
+    }
+    line_number++;
+    if(line_number >= 50){
+      (void)printf("\n\n(!) Error : File exceeded expected length. Exiting program ...");
+      (void)exit(1);
+    } else if (line_number == which_line){
+      (void)ue_line_to_struct(buff, (int)strlen(buff), &details);
+      break;
+    }
+  }
+  (void)fclose(fxtr);
+}
+
+void ue_grab_id(char * id_buff, int id_buff_size){
+  // grab id, give 10 chances
+  for(int i = 0; i < 10; i++){
+    // get id
+    (void)clean_buffer(id_buff, id_buff_size);
+    (void)ue_get_id(id_buff, id_buff_size);
+    // check id
+    if((bool)id_is_invalid(id_buff, id_buff_size)){
+      (void)printf("\n\n(!) ID format is invalid.");
+      if((int)getch() == 27){
+        (void)menu();
+      } else {
+        (void)clean_buffer(id_buff, id_buff_size);
+        (void)ue_get_id(id_buff, id_buff_size);
+      }
+    } else if((bool)id_exists(id_buff) == false){
+      (void)printf("\n\n(!) ID does not exist.");
+      if((int)getch() == 27){
+        (void)menu();
+      } else {
+        (void)clean_buffer(id_buff, id_buff_size);
+        (void)ue_get_id(id_buff, id_buff_size);
+      }
+    } else {
+      return;
+      break;
+    }
+  }
+  // if return was not triggered in the loop ...
+  printf("\n\n(!) Too many invalid inputs. Returning to menu ...");
+  (void)getch();
+  (void)menu();
+}
+
+void ue_get_id(char * id_buff, int id_buff_size){
+  (void)system("cls");
+  // prompt
+  (void)printf("\n(i) Enter ID of the employe record you wish to edit\n");
+  (void)printf("\nEmployee ID : ");
+  // get id
+  (void)get_string_input(id_buff, id_buff_size);
+}
+
+void update_employee(){
+  // grab id
+  char id[max];
+  (void)ue_grab_id(id, max);
+  // find id in file
+  int id_location = (int)id_exists(id);
+  // struct to store record details
+  employee to_edit;
+  (void)ue_extract_line(id_location, &to_edit);
+  // show details of record to be edited
+  (void)ue_show_details(to_edit);
+  // navigate update menu
+  (void)ue_navigate_sd(to_edit);
 }
 
 void print_line(employee details){
@@ -111,62 +292,20 @@ int retrieve_from_file(){
       line_is_header = false;
       continue;
     }
-
     line_count++;
-
-    int len = (int)strlen(buff);
-    // remove newline
-    buff[len - 1] = '\0';
-
-    int comma = 0;
-    int str_i = 0;
-
     // temporarily store in struct   
     employee current_employee;
-
     // clean struct members
     (void)clean_buffer(current_employee.id, max);
     (void)clean_buffer(current_employee.name, max);
     (void)clean_buffer(current_employee.department, max);
     (void)clean_buffer(current_employee.position, max);
     (void)clean_buffer(current_employee.gender, max);
+    
+    (void)ue_line_to_struct(buff, (int)strlen(buff), &current_employee);
 
-    for(int i = 0; i < len; i++){
-      if(buff[i] == ','){
-        comma++;
-        str_i = 0;
-        continue;
-      }
-      switch(comma){
-        case 0:
-          current_employee.id[str_i] = buff[i];
-          str_i++;
-          break;
-        case 1:
-          current_employee.name[str_i] = buff[i];
-          str_i++;
-          break;
-        case 2:
-          current_employee.department[str_i] = buff[i];
-          str_i++;
-          break;
-        case 3:
-          current_employee.position[str_i] = buff[i];
-          str_i++;
-          break;
-        case 4: 
-          current_employee.gender[str_i] = buff[i];
-          str_i++;
-          break;
-        default:
-          (void)printf("\n\n(!) Program Error : Invalid ',' character detected.");
-          (void)getch();
-          (void)exit(1);
-          break;
-      }
-    } // for loop }
     (void)print_line(current_employee);
-  } // while loop }
+  } 
   (void)fclose(fret);
   return line_count;
 }
@@ -486,8 +625,8 @@ void get_employee_details(){
   (void)strcpy(new_employee.name, employee_fname);
   (void)strcat(new_employee.name, " ");
   (void)strcat(new_employee.name, employee_lname);
-  (void)strcpy(new_employee.position, employee_pos);
   (void)strcpy(new_employee.department, employee_dept);
+  (void)strcpy(new_employee.position, employee_pos);
   (void)strcpy(new_employee.gender, employee_gender);
   // finally, print to file
   (void)put_to_file(new_employee);
@@ -564,7 +703,7 @@ void navigate_menu(){
               (void)view_employee();    
               break;
           case '3':
-              //(void)update_employee();    
+              (void)update_employee();    
               break;
           case '4':
               //(void)remove_employee();    
@@ -715,7 +854,7 @@ void load_files(){
     if((bool)file_exists() == false){
         FILE * fcreate = (FILE *)fopen("records.csv", "w");
         // include a header line
-        (void)fprintf(fcreate, "ID,Name,Position,Department,Gender\n");
+        (void)fprintf(fcreate, "ID,Name,Department,Position,Gender\n");
         (void)fclose(fcreate);
     }
 }
