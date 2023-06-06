@@ -62,16 +62,19 @@ void draw_border(int length);
 void add_space(const int width, int deduct);
 int retrieve_from_file();
 void clean_buffer(char * buffer, int size);
+void clean_struct_members(employee * details);
 void print_line(employee details);
 
 void update_employee();
 void ue_get_id(char * id_buff, int id_buff_size);
-void ue_grab_id(char * id_buff, int id_buff_size);
+bool ue_get_raw_id(char * id_buff, int buff_size);
 void ue_extract_line(int which_line, employee * details);
 void ue_line_to_struct(char * buff, int size, employee * details);
 void ue_show_details(employee details);
 void ue_navigate_sd(employee details);
 void ue_update_id(employee details);
+void ue_get_new_id(char * buff, int size);
+void ue_update_name(employee details);
 
 void remove_employee();
 
@@ -79,8 +82,51 @@ int main(){
   (void)menu();
 }
 
-void ue_update_id(employee details){
+void ue_update_name(employee details){
 
+}
+
+void ue_get_new_id(char * buff, int size){
+  // give 10 chances
+  for(int i = 0; i < 10; i++){
+    (void)system("cls");
+    // get new id
+    (void)printf("\nEnter new ID : ");
+    (void)get_string_input(buff, size);
+    // check new id
+    if((bool)id_exists(buff)){
+      (void)printf("\n\n(!) Notice : ID already exists.");
+      if((int)getch() == 27){
+        (void)menu();
+      }
+      continue;
+    } else if ((bool)id_is_invalid(buff, (int)strlen(buff))){
+      (void)printf("\n\n(!) Notice : ID is invalid.");
+      if((int)getch() == 27){
+        (void)menu();
+      }
+
+    } else {
+      // if checks passed
+      return;
+    }
+  }
+  // if return was not triggered
+  (void)printf("(!) Notice : Too many invalid attempts. Returning to menu ...");
+  (void)getch();
+  (void)menu();
+}
+
+void ue_update_id(employee details){
+  (void)remove_from_file(details.id);
+  (void)clean_buffer(details.id, max);
+
+  (void)ue_get_new_id(details.id, max);
+  (void)put_to_file(details);
+
+  (void)printf("\n\n(i) Notice : ID info was successfully updated.");
+  (void)getch();
+  (void)view_employee();
 }
 
 void ue_navigate_sd(employee details){
@@ -119,7 +165,7 @@ void ue_navigate_sd(employee details){
   }
 }
 
-void show_details(employee details){
+void ue_show_details(employee details){
   (void)system("cls");
   (void)printf("\n(i) Select which field you wish to edit.\n");
   (void)printf("\n[1] Employee ID : %s", details.id);
@@ -127,7 +173,7 @@ void show_details(employee details){
   (void)printf("\n[3] Employee Department : %s", details.department);
   (void)printf("\n[4] Employee Position : %s", details.position);
   (void)printf("\n[5] Employee Gender : %s\n", details.gender);
-  (void)printf("\n[6] Cancel : %s", details.gender);
+  (void)printf("\n[6] Cancel");
 }
 
 void ue_line_to_struct(char * buff, int size, employee * details){
@@ -185,64 +231,55 @@ void ue_extract_line(int which_line, employee * details){
       (void)printf("\n\n(!) Error : File exceeded expected length. Exiting program ...");
       (void)exit(1);
     } else if (line_number == which_line){
-      (void)ue_line_to_struct(buff, (int)strlen(buff), &details);
+      (void)ue_line_to_struct(buff, (int)strlen(buff), details);
       break;
     }
   }
   (void)fclose(fxtr);
 }
 
-void ue_grab_id(char * id_buff, int id_buff_size){
-  // grab id, give 10 chances
+void ue_get_id(char * id_buff, int id_buff_size){
   for(int i = 0; i < 10; i++){
+    (void)system("cls");
+    (void)printf("\n(i) Enter ID of the employe record you wish to edit\n");
     // get id
-    (void)clean_buffer(id_buff, id_buff_size);
-    (void)ue_get_id(id_buff, id_buff_size);
+    (void)printf("\nEnter ID : ");
+    (void)get_string_input(id_buff, id_buff_size);
     // check id
-    if((bool)id_is_invalid(id_buff, id_buff_size)){
-      (void)printf("\n\n(!) ID format is invalid.");
+    if((bool)id_is_invalid(id_buff, strlen(id_buff))){
+      (void)printf("\n\n(!) Warning : ID input invalid.");
       if((int)getch() == 27){
         (void)menu();
       } else {
-        (void)clean_buffer(id_buff, id_buff_size);
-        (void)ue_get_id(id_buff, id_buff_size);
+        continue;
       }
     } else if((bool)id_exists(id_buff) == false){
-      (void)printf("\n\n(!) ID does not exist.");
+      (void)printf("\n\n(!) Warning : ID does not exists.");
       if((int)getch() == 27){
         (void)menu();
       } else {
-        (void)clean_buffer(id_buff, id_buff_size);
-        (void)ue_get_id(id_buff, id_buff_size);
+        continue;
       }
-    } else {
-      return;
-      break;
     }
+    // if it passes checks
+    return;
   }
-  // if return was not triggered in the loop ...
-  printf("\n\n(!) Too many invalid inputs. Returning to menu ...");
+  // if return was not triggered
+  (void)printf("\n\n(!) Notice : Too many invalid attempts. Returning to menu ...");
   (void)getch();
   (void)menu();
-}
-
-void ue_get_id(char * id_buff, int id_buff_size){
-  (void)system("cls");
-  // prompt
-  (void)printf("\n(i) Enter ID of the employe record you wish to edit\n");
-  (void)printf("\nEmployee ID : ");
-  // get id
-  (void)get_string_input(id_buff, id_buff_size);
 }
 
 void update_employee(){
   // grab id
   char id[max];
-  (void)ue_grab_id(id, max);
+  (void)ue_get_id(id, max);
   // find id in file
   int id_location = (int)id_exists(id);
   // struct to store record details
   employee to_edit;
+  // clean struct members first
+  (void)clean_struct_members(&to_edit);
   (void)ue_extract_line(id_location, &to_edit);
   // show details of record to be edited
   (void)ue_show_details(to_edit);
@@ -267,6 +304,15 @@ void print_line(employee details){
   
   (void)printf("%s", details.gender);
   (void)add_space(table.gender_w, strlen(details.gender));
+}
+
+void clean_struct_members(employee * details){
+  // set default size to max
+  clean_buffer(details->id, max);
+  clean_buffer(details->name, max);
+  clean_buffer(details->department, max);
+  clean_buffer(details->position, max);
+  clean_buffer(details->gender, max);
 }
 
 void clean_buffer(char * buffer, int size){
@@ -296,11 +342,7 @@ int retrieve_from_file(){
     // temporarily store in struct   
     employee current_employee;
     // clean struct members
-    (void)clean_buffer(current_employee.id, max);
-    (void)clean_buffer(current_employee.name, max);
-    (void)clean_buffer(current_employee.department, max);
-    (void)clean_buffer(current_employee.position, max);
-    (void)clean_buffer(current_employee.gender, max);
+    (void)clean_struct_members(&current_employee);
     
     (void)ue_line_to_struct(buff, (int)strlen(buff), &current_employee);
 
@@ -326,8 +368,8 @@ void set_table_dimensions(){
   // set values for global struct table
   table.id_w = 10;
   table.name_w = 32;
-  table.dept_w = 25;
-  table.pos_w = 20;
+  table.dept_w = 20;
+  table.pos_w = 25;
   table.gender_w = 10;
   table.table_w = (table.id_w + table.name_w + table.dept_w + table.pos_w + table.gender_w);
 }
@@ -597,7 +639,7 @@ void read_employee_id(char * buff, const int size){
     else {
       return;
     }
-    (void)strcpy(buff, "");
+    clean_buffer(buff, max);
   }
   (void)printf("\n\n(!) Too many invalid inputs. Returning to menu.");
   (void)getch();
@@ -743,8 +785,8 @@ void get_string_input(char * buffer, const int buffer_size){
 }
 
 void put_temp_to_dir(){
-    FILE * fdir = (FILE *)fopen("./files/records.csv", "w");
-    FILE * ftmp = (FILE *)fopen("./files/temp.csv", "r");
+    FILE * fdir = (FILE *)fopen("records.csv", "w");
+    FILE * ftmp = (FILE *)fopen("temp.csv", "r");
 
     char buff[max];
     // place back content of temp file to original file
@@ -757,13 +799,15 @@ void put_temp_to_dir(){
 }
 
 void put_dir_to_temp(int skip_line){
-    FILE * fdir = (FILE *)fopen("./files/records.csv", "r");
-    FILE * ftmp = (FILE *)fopen("./files/temp.csv", "w");
+    FILE * fdir = (FILE *)fopen("records.csv", "r");
+    FILE * ftmp = (FILE *)fopen("temp.csv", "w");
 
     char buff[max];
-    int line_number = 0;
+    int line_number = -1;
+    bool header = true;
     // transfer records to a temporary file, skipping line of matched id
     while((char *)fgets(buff, max, fdir) != NULL){
+        line_number++;
         if(line_number == skip_line){
             continue;
         }
@@ -788,7 +832,7 @@ void remove_from_file(char * employee_id){
     // file removal SOP
     (void)put_dir_to_temp(id_location);
     (void)put_temp_to_dir();
-    (void)remove("./files/temp.csv");
+    (void)remove("temp.csv");
 }
 
 int id_exists(char * input_id){
@@ -830,8 +874,8 @@ void put_to_file(employee details){
 
     (void)fprintf(frecords, "%s,", details.id);
     (void)fprintf(frecords, "%s,", details.name);
-    (void)fprintf(frecords, "%s,", details.position);
     (void)fprintf(frecords, "%s,", details.department);
+    (void)fprintf(frecords, "%s,", details.position);
     (void)fprintf(frecords, "%s\n", details.gender);
 
     (void)fclose(frecords);
