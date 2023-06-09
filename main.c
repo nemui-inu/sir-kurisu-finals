@@ -912,14 +912,24 @@ void ve_navigate_options(){
 }
 
 void view_employee(){
+  char s[max];
+  int count = st_get_trash_last_line(s, max);
+
+  if(count < 1){
+    remove("trash.csv");
+  }
+
   // this table will be of static size
   (void)system("cls");
   (void)ve_write_table_header();
+
   // total retrieved lines from file, prints them as well
   int ret_lines = (int)ve_retrieve_from_file();
+
   // draw bottom border
   (void)printf("\n\n\t");
   (void)ve_draw_border(table.table_w);
+
   // show total records
   (void)printf("\n\n\tTotal Records: %d", ret_lines);
 
