@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define max 128
+#define max 240
 
 // employee details
 typedef struct {
@@ -53,6 +53,7 @@ void ae_read_employee_pos(char * buff);
 void ae_read_employee_gender(char * buff);
 
 void view_employee();
+void ve_navigate_options();
 void ve_write_table_header();
 void ve_set_table_dimensions();
 void ve_draw_border(int length);
@@ -86,13 +87,210 @@ void ue_nav_new_gender(char * buff, int size);
 void remove_employee();
 
 // stack is used here:
-void lambda(); // wip
+int st_get_record_last_line(char * buff, int size);
+int st_get_trash_last_line(char * buff, int size);
+void st_extract_id_from_line(char * buff, char * data_line);
+void st_put_line_to_file(char * line);
+void st_pop_last_line_record();
+void st_push_last_line_trash();
+void st_remove_line_from_trash(char * line);
 
 int main(){
   (void)menu();
 }
 
+void st_remove_line_from_trash(char * line){
+    FILE * count_line_file = (FILE *)fopen("trash.csv", "r");
+    
+    char buff[max];
+    int line_found = 0;
+
+    while(fgets(buff, max, count_line_file)){
+        line_found++;
+        if(strcmp(line, buff) == 0){
+            break;
+        }
+    }
+
+    fclose(count_line_file);
+
+    FILE * trash_file = (FILE *)fopen("trash.csv", "r");
+    FILE * temp_file = (FILE *)fopen("temp.csv", "w");
+
+    ve_clean_buffer(buff, max);
+
+    int line_count = 0;
+
+    while(fgets(buff, max, trash_file)){
+        line_count++;
+        if(line_count == line_found){
+            continue;
+        }
+        fprintf(temp_file, buff);
+    }
+
+    fclose(temp_file);
+    fclose(trash_file);
+
+    trash_file = (FILE *)fopen("trash.csv", "w");
+    temp_file = (FILE *)fopen("temp.csv", "r");
+
+    ve_clean_buffer(buff, max);
+
+    while(fgets(buff, max, temp_file)){
+        fprintf(trash_file, buff);
+    }
+
+    fclose(temp_file);
+    fclose(trash_file);
+
+    remove("temp.csv");
+}
+
+void st_push_last_line_trash(){
+    char line_buff[max];
+    int last_line = st_get_trash_last_line(line_buff, max);
+
+    // stack should only hold 50
+
+    if(last_line > 50){
+        printf("\n\n\n\t(!) Stack Overflow.");
+        getch();
+        view_employee();
+    } else if(last_line < 1){
+        printf("\n\n\n\t(!) Recent is empty. Nothing to push here.");
+        getch();
+        view_employee();
+    }
+
+    st_put_line_to_file(line_buff);
+
+    st_remove_line_from_trash(line_buff);
+
+    (void)view_employee();
+}
+
+void st_pop_last_line_record(){
+    char line_buff[max];
+    int last_line = st_get_record_last_line(line_buff, max);
+
+    if(last_line < 1){
+        printf("\n\n\n\t(!) Stack Underflow");
+        getch();
+        view_employee();
+    }
+
+    char id_buff[max];
+    (void)st_extract_id_from_line(id_buff, line_buff);
+    (void)remove_from_file(id_buff);
+
+    (void)view_employee();
+}
+
+void st_put_line_to_file(char * line){
+    // check first if there is identical ID
+    char id[max];
+    (void)st_extract_id_from_line(id, line);
+    if((int)id_exists(id) != 0){
+        printf("(!)");
+        getch();
+        return;
+    }
+
+    FILE * append_file = (FILE *)fopen("records.csv", "a");
+    (void)fprintf(append_file, line);
+    (void)fclose(append_file);
+}
+
+void st_extract_id_from_line(char * buff, char * data_line){
+    int len = (int)strlen(data_line);
+
+    for(int i = 0; i < len; i++){
+        if(data_line[i] == ','){
+            buff[i] = '\0';
+            break;
+        }
+        buff[i] = data_line[i];
+    }
+}
+
+int st_get_trash_last_line(char * buff, int size){
+    char buffer[max];
+
+    FILE * line_count_file = (FILE *)fopen("trash.csv", "r");
+
+    if(line_count_file == NULL){
+        fclose(line_count_file);
+        return 0;
+    }
+
+    int last_line = 0;
+
+    while(fgets(buffer, max, line_count_file)){
+        last_line++;
+    }
+
+    fclose(line_count_file);
+
+    ve_clean_buffer(buffer, max);
+
+    FILE * ftake = (FILE *)fopen("trash.csv", "r");
+
+    int line_count = 0;
+
+    while((char *)fgets(buffer, max, ftake) != NULL){
+        line_count++;
+        if(line_count == last_line){
+            (void)strcpy(buff, buffer);
+        }
+    }
+
+    (void)fclose(ftake);
+    return last_line;
+}
+
+int st_get_record_last_line(char * buff, int size){
+    char buffer[max];
+
+    int last_line = -1;
+
+    FILE * count_file = fopen("records.csv", "r");
+
+    while(fgets(buffer, max, count_file)){
+        last_line++;
+    }
+
+    ve_clean_buffer(buffer, max);
+
+    int line_count = -1;
+
+    FILE * ftake = (FILE *)fopen("records.csv", "r");
+
+    while((char *)fgets(buffer, max, ftake) != NULL){
+        line_count++;
+        if(line_count == last_line){
+            (void)strcpy(buff, buffer);
+        }
+    }
+    (void)fclose(ftake);
+    return last_line;
+}
+
 void remove_employee(){
+    char s[max];
+    int count = st_get_record_last_line(s, max);
+  
+    if(count < 1){
+        system("cls");
+        printf("\n(!) No records found. Would you like to add ? [Y/n]");
+        char c = getch();
+        if(c == 'y' || c == 'Y' || c == 13){
+            add_employee();
+        } else {
+            menu();
+        }
+    } 
+
     (void)system("cls");
     (void)printf("\nThis option will remove the employee from the record.\n");
     (void)printf("\nDo you wish to continue ? [Y/n]\n");
@@ -534,18 +732,37 @@ void ue_get_id(char * id_buff, int id_buff_size){
 }
 
 void update_employee(){
+  char s[max];
+  int count = st_get_record_last_line(s, max);
+  
+  if(count < 1){
+    system("cls");
+    printf("\n(!) No records found. Would you like to add ? [Y/n]");
+    char c = getch();
+    if(c == 'y' || c == 'Y' || c == 13){
+        add_employee();
+    } else {
+        menu();
+    }
+  }
+
   // grab id
   char id[max];
   (void)ue_get_id(id, max);
+
   // find id in file
   int id_location = (int)id_exists(id);
+
   // struct to store record details
   employee to_edit;
+
   // clean struct members first
   (void)ve_clean_struct_members(&to_edit);
   (void)ue_extract_line(id_location, &to_edit);
+
   // show details of record to be edited
   (void)ue_show_details(to_edit);
+
   // navigate update menu
   (void)ue_navigate_sd(to_edit);
 }
@@ -671,6 +888,29 @@ void ve_write_table_header(){
   (void)ve_draw_border(table.table_w);
 }
 
+void ve_navigate_options(){
+    bool key_invalid = true;
+    while(key_invalid){
+        switch(getch()){
+            case 'z':
+                (void)st_pop_last_line_record();
+                break;
+            case 'x':
+                (void)st_push_last_line_trash();
+                break;
+            case 'c':
+                (void)add_employee();
+                break;
+            case 27:
+            case 13:
+                (void)menu();
+                break;
+            default:
+                continue;
+        }
+    }
+}
+
 void view_employee(){
   // this table will be of static size
   (void)system("cls");
@@ -682,8 +922,21 @@ void view_employee(){
   (void)ve_draw_border(table.table_w);
   // show total records
   (void)printf("\n\n\tTotal Records: %d", ret_lines);
-  (void)getch();
-  (void)menu();
+
+  if(ret_lines == 0){
+    printf("\n\n\t(!) Stack is EMPTY.");
+  } else if(ret_lines == 50){
+    printf("\n\n\t(!) Stack is FULL.");
+  }
+
+  (void)printf("\n\n\n");
+
+  (void)printf("\t[z] : Pop");
+  (void)printf("\t\t[x] : Push Recent");
+  (void)printf("\t\t[c] : Push New");
+  (void)printf("\t\t[ESC] : Exit");
+
+  (void)ve_navigate_options();
 }
 
 void ae_read_employee_gender(char * buff){
@@ -771,6 +1024,7 @@ void ae_read_employee_dept(char * buff){
   (void)printf("\n\t4 :: Design");
   (void)printf("\n\t4 :: Logistics\n");
   (void)printf("\n(i) Press ESC to cancel.");
+
   bool key_press_invalid = true;
   while(key_press_invalid){
     switch((char)getch()){
@@ -810,6 +1064,7 @@ void ae_read_employee_lname(char * buff, const int size){
     (void)printf("\nEnter Employee Last Name: ");
     (void)get_string_input(buff, size);
     // check length
+
     int len = (int)strlen(buff);
     if(len > (table.name_w / 2)){
       // clear buffer
@@ -824,8 +1079,9 @@ void ae_read_employee_lname(char * buff, const int size){
       return;
     }
   }
-    (void)printf("\n\n(!) Too many invalid inputs. Returning to menu ....");
-    (void)getch();
+
+  (void)printf("\n\n(!) Too many invalid inputs. Returning to menu ....");
+  (void)getch();
   (void)menu();
 }
 
@@ -834,6 +1090,7 @@ void ae_read_employee_fname(char * buff, const int size){
     (void)system("cls");
     (void)printf("\nEnter Employee First Name: ");
     (void)get_string_input(buff, size);
+
     // check length
     int len = (int)strlen(buff);
     if(len > (table.name_w / 2)){
@@ -849,6 +1106,7 @@ void ae_read_employee_fname(char * buff, const int size){
       return;
     }
   }
+
   (void)printf("\n\n(!) Too many invalid inputs. Returning to menu ....");
   (void)getch();
   (void)menu();
@@ -859,6 +1117,7 @@ bool ae_id_is_invalid(char * buff, const int size){
   if(size > 7 || size < 0){
     return true;
   }
+
   for(int i = 0; i < size; i++){
     if(buff[i] == '-'){
       if(i != 3){
@@ -867,10 +1126,12 @@ bool ae_id_is_invalid(char * buff, const int size){
         continue;
       }
     }
+
     if(buff[i] < '0' || buff[i] > '9'){
       return true;
     }
   }
+
   return false;
 }
 
@@ -881,8 +1142,10 @@ void ae_read_employee_id(char * buff, const int size){
     (void)printf("\n(i) Valid ID is written as such : \"123-123\"\n");
     (void)printf("\nEnter Employee ID: ");
     (void)get_string_input(buff, size);
+    
     // id should only have numbers and dashes
     int len = (int)strlen(buff);
+
     if((bool)ae_id_is_invalid(buff, len)){
       (void)printf("(!) Error: Invalid ID.");
       if((int)getch() == 27){
@@ -891,6 +1154,7 @@ void ae_read_employee_id(char * buff, const int size){
         continue;
       }
     } 
+
     if((bool)id_exists(buff)){
       (void)printf("\n\n(!) Employee ID already exists.");
       if((int)getch() == 27){
@@ -902,8 +1166,10 @@ void ae_read_employee_id(char * buff, const int size){
     else {
       return;
     }
+
     ve_clean_buffer(buff, max);
   }
+
   (void)printf("\n\n(!) Too many invalid inputs. Returning to menu.");
   (void)getch();
   (void)menu();
@@ -911,19 +1177,26 @@ void ae_read_employee_id(char * buff, const int size){
 
 void ae_get_employee_details(){
   (void)system("cls");
+
   // write input to local variables
   char employee_id[max];
   (void)ae_read_employee_id(employee_id, max);
+
   char employee_fname[max];
   (void)ae_read_employee_fname(employee_fname, max);
+
   char employee_lname[max];
   (void)ae_read_employee_lname(employee_lname, max);
+
   char employee_dept[max];
   (void)ae_read_employee_dept(employee_dept);
+
   char employee_pos[max];
   (void)ae_read_employee_pos(employee_pos);
+
   char employee_gender[max];
   (void)ae_read_employee_gender(employee_gender);
+
   // then clone to struct
   employee new_employee;
   (void)strcpy(new_employee.id, employee_id);
@@ -933,7 +1206,7 @@ void ae_get_employee_details(){
   (void)strcpy(new_employee.department, employee_dept);
   (void)strcpy(new_employee.position, employee_pos);
   (void)strcpy(new_employee.gender, employee_gender);
-  // finally, print to file
+
   (void)put_to_file(new_employee);
 }
 
@@ -948,15 +1221,16 @@ bool invalid_character_exists(char * string, const int size){
 }
 
 int ae_get_input_count(){
-    // count how many inputs are needed
     system("cls");
-    // echo prompt
     (void)printf("\n(i) Note : You can only add 10 employees at a time.\n");
+    (void)printf("\n(i) Note : You can enter \"0\" to return to menu.\n");
     (void)printf("\nHow many employees would you like to enter? : ");
+
     // get input in string format
     char str_input_count[max];
     (void)get_string_input(str_input_count, max);
     int len = (int)strlen(str_input_count);
+
     // check first for any invalid character before converting to int
     if((bool)invalid_character_exists(str_input_count, len)){
       (void)printf("\n\n(!) Error : Invalid characters detected.");
@@ -966,9 +1240,10 @@ int ae_get_input_count(){
         (void)add_employee();
       }
     }
+
     // convert to int
     int input_count = (int)atoi(str_input_count);
-    // take only up to 10 inputs
+
     if(input_count > 10){
       (void)printf("\n\n(!) You can only record up to 10 employees at a time.");
       if((int)getch() == 27){
@@ -977,24 +1252,47 @@ int ae_get_input_count(){
         (void)add_employee();
       }
     }
-    // when all is good:
+
     return input_count;
 }
 
 void add_employee(){
+    FILE * count_file = fopen("records.csv", "r");
+
+    char s[max];
+    int count = 0;
+
+    while(fgets(s, max, count_file)){
+        count++;
+    }
+
+    fclose(count_file);
+
+    if(count >= 50){
+        system("cls");
+        printf("(!) Employee records full. You can only store 50 records at a time.");
+        getch();
+        menu();
+    }
+
     // read how many inputs are needed (10 max)
-    int input_count = (int)ae_get_input_count
-();
+    int input_count = (int)ae_get_input_count();
+
+    // if count was 0, cancel operation
+    if(input_count == 0){
+        menu();
+    }
+
     // then call this function iteratively
     for(int i = 0; i < input_count; i++){
       (void)ae_get_employee_details();
     }
+
     // clear screen for affirmation message
     (void)system("cls");
     (void)printf("\n\n(i) Employee details were recorded successfully.");
     (void)getch();
-    //view_employee();
-    (void)menu();
+    (void)view_employee();
 }
 
 void navigate_menu(){
@@ -1006,13 +1304,13 @@ void navigate_menu(){
               (void)add_employee();    
               break;
           case '2':
-              (void)view_employee();    
+              (void)view_employee();
               break;
           case '3':
               (void)update_employee();    
               break;
           case '4':
-              //(void)remove_employee();    
+              (void)remove_employee();    
               break;
           case '5':
           case 27:
@@ -1065,6 +1363,7 @@ void put_temp_to_dir(){
 void put_dir_to_temp(int skip_line){
     FILE * fdir = (FILE *)fopen("records.csv", "r");
     FILE * ftmp = (FILE *)fopen("temp.csv", "w");
+    FILE * recently_deleted_file = (FILE *)fopen("trash.csv", "a");
 
     char buff[max];
     int line_number = -1;
@@ -1073,11 +1372,13 @@ void put_dir_to_temp(int skip_line){
     while((char *)fgets(buff, max, fdir) != NULL){
         line_number++;
         if(line_number == skip_line){
+            (void)fprintf(recently_deleted_file, buff);
             continue;
         }
         (void)fprintf(ftmp, buff);
     }
 
+    (void)fclose(recently_deleted_file);
     (void)fclose(ftmp);
     (void)fclose(fdir);
 }
