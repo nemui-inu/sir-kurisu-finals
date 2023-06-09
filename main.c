@@ -192,9 +192,7 @@ void st_put_line_to_file(char * line){
     char id[max];
     (void)st_extract_id_from_line(id, line);
     if((int)id_exists(id) != 0){
-        printf("(!)");
-        getch();
-        return;
+        view_employee();
     }
 
     FILE * append_file = (FILE *)fopen("records.csv", "a");
@@ -293,7 +291,7 @@ void remove_employee(){
 
     (void)system("cls");
     (void)printf("\nThis option will remove the employee from the record.\n");
-    (void)printf("\nDo you wish to continue ? [Y/n]\n");
+    (void)printf("\nDo you wish to continue ? [Y/n]");
 
     bool invalid = true;
     while(invalid){
@@ -605,9 +603,11 @@ void ue_navigate_sd(employee details){
         (void)ue_update_dept(details);
         break;
       case '4':
+        (void)ue_update_pos(details);
         invalid = false;
         break;
       case '5':
+        (void)ue_update_gender(details);
         invalid = false;
         break;
       case '6':
@@ -702,10 +702,18 @@ void ue_extract_line(int which_line, employee * details){
 void ue_get_id(char * id_buff, int id_buff_size){
   for(int i = 0; i < 10; i++){
     (void)system("cls");
+    (void)printf("\n(i) Note : You can enter \"0\" if you wish to cancel this operation.\n");
     (void)printf("\n(i) Enter ID of the employe record you wish to edit\n");
+
     // get id
     (void)printf("\nEnter ID : ");
     (void)get_string_input(id_buff, id_buff_size);
+
+    // exit if id is 0
+    if(strcmp(id_buff, "0") == 0){
+        menu();
+    }
+
     // check id
     if((bool)ae_id_is_invalid(id_buff, strlen(id_buff))){
       (void)printf("\n\n(!) Warning : ID input invalid.");
@@ -722,9 +730,11 @@ void ue_get_id(char * id_buff, int id_buff_size){
         continue;
       }
     }
+
     // if it passes checks
     return;
   }
+
   // if return was not triggered
   (void)printf("\n\n(!) Notice : Too many invalid attempts. Returning to menu ...");
   (void)getch();
