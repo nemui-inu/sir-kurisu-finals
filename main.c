@@ -37,37 +37,33 @@ void put_dir_to_temp(int skip_line);
 void put_temp_to_dir();
 void get_string_input(char * buffer, const int buffer_size);
 
-// stack is used here:
-void undo_action();
-
 // main functions
 void menu();
 void navigate_menu();
 
 void add_employee();
-int get_input_count();
-void get_employee_details();
-void read_employee_id(char * buff, const int size);
-bool id_is_invalid(char * buff, const int size);
-void read_employee_fname(char * buff, const int size);
-void read_employee_lname(char * buff, const int size);
-void read_employee_dept(char * buff);
-void read_employee_pos(char * buff);
-void read_employee_gender(char * buff);
+int ae_get_input_count();
+void ae_get_employee_details();
+void ae_read_employee_id(char * buff, const int size);
+bool ae_id_is_invalid(char * buff, const int size);
+void ae_read_employee_fname(char * buff, const int size);
+void ae_read_employee_lname(char * buff, const int size);
+void ae_read_employee_dept(char * buff);
+void ae_read_employee_pos(char * buff);
+void ae_read_employee_gender(char * buff);
 
 void view_employee();
-void write_table_header();
-void set_table_dimensions();
-void draw_border(int length);
-void add_space(const int width, int deduct);
-int retrieve_from_file();
-void clean_buffer(char * buffer, int size);
-void clean_struct_members(employee * details);
-void print_line(employee details);
+void ve_write_table_header();
+void ve_set_table_dimensions();
+void ve_draw_border(int length);
+void ve_add_space(const int width, int deduct);
+int ve_retrieve_from_file();
+void ve_clean_buffer(char * buffer, int size);
+void ve_clean_struct_members(employee * details);
+void ve_print_line(employee details);
 
 void update_employee();
 void ue_get_id(char * id_buff, int id_buff_size);
-bool ue_get_raw_id(char * id_buff, int buff_size);
 void ue_extract_line(int which_line, employee * details);
 void ue_line_to_struct(char * buff, int size, employee * details);
 void ue_show_details(employee details);
@@ -75,15 +71,280 @@ void ue_navigate_sd(employee details);
 void ue_update_id(employee details);
 void ue_get_new_id(char * buff, int size);
 void ue_update_name(employee details);
+void ue_get_new_fname(char * buff, int size);
+void ue_get_new_lname(char * buff, int size);
+void ue_update_dept(employee details);
+void ue_get_new_dept(char * buff, int size);
+void ue_nav_new_dept(char * buff, int size);
+void ue_update_pos(employee details);
+void ue_get_new_pos(char * buff, int size);
+void ue_nav_new_pos(char * buff, int size);
+void ue_update_gender(employee details);
+void ue_get_new_gender(char * buff, int size);
+void ue_nav_new_gender(char * buff, int size);
 
 void remove_employee();
+
+// stack is used here:
+void lambda(); // wip
 
 int main(){
   (void)menu();
 }
 
-void ue_update_name(employee details){
+void remove_employee(){
+    (void)system("cls");
+    (void)printf("\nThis option will remove the employee from the record.\n");
+    (void)printf("\nDo you wish to continue ? [Y/n]\n");
 
+    bool invalid = true;
+    while(invalid){
+        switch((char)getch()){
+            case 'y':
+            case 'Y':
+            case 13:
+                invalid = false;
+                break;
+            case 'n':
+            case 'N':
+            case 27:
+                menu();
+                break;
+            default:
+                continue;
+        }
+    }
+
+    char id[max];
+    (void)ue_get_id(id, max);
+    (void)remove_from_file(id);
+
+    (void)system("cls");
+    (void)printf("\n(-) Employee removed successfully.");
+    (void)getch();
+    (void)view_employee();
+}
+
+void ue_nav_new_gender(char * buff, int size){
+  for(int i = 0; i < 10; i++){
+    switch((char)getch()){
+      case '1':
+        strcpy(buff, "Male");
+        break;
+      case '2':
+        strcpy(buff, "Female");
+        break;
+      case 27:
+        (void)menu();
+      default:
+        continue;
+    }
+    return;
+  }
+}
+
+void ue_get_new_gender(char * buff, int size){
+  (void)system("cls");
+  (void)printf("\n(i) Notice : Choose Position to update to.\n");
+  (void)printf("\n\t1 :: Male");
+  (void)printf("\n\t2 :: Female");
+  (void)printf("\n(i) Notice : Press ESC to cancel.\n");
+  (void)ue_nav_new_gender(buff, size);
+}
+
+void ue_update_gender(employee details){
+  (void)remove_from_file(details.id);
+  (void)ve_clean_buffer(details.gender, max);
+
+  (void)ue_get_new_pos(details.gender, max);
+  (void)put_to_file(details);
+
+  (void)printf("\n\n(i) Notice : Gender info was successfully updated.");
+  (void)getch();
+  (void)view_employee(); 
+}
+
+void ue_nav_new_pos(char * buff, int size){
+  for(int i = 0; i < 10; i++){
+    switch((char)getch()){
+      case '1':
+        strcpy(buff, "Dept. Head");
+        break;
+      case '2':
+        strcpy(buff, "Dept. Deputy Head");
+        break;
+      case '3':
+        strcpy(buff, "Manager");
+        break;
+      case '4':
+        strcpy(buff, "Asst. Manager");
+        break;
+      case '5':
+        strcpy(buff, "Team Leader");
+        break;
+      case '6':
+        strcpy(buff, "Staff");
+        break;
+      case 27:
+        (void)menu();
+      default:
+        continue;
+    }
+    return;
+  }
+  // when return is not triggered
+  (void)printf("\n\n(!) Notice : Too many invalid attempts. Taking you back to menu ...");
+  (void)getch();
+  (void)menu();
+}
+
+void ue_get_new_pos(char * buff, int size){
+  (void)system("cls");
+  (void)printf("\n(i) Notice : Choose Position to update to.\n");
+  (void)printf("\n\t1 :: Dept. Head");
+  (void)printf("\n\t2 :: Dept. Deputy Head");
+  (void)printf("\n\t3 :: Manager");
+  (void)printf("\n\t4 :: Asst. Manager");
+  (void)printf("\n\t5 :: Team Leader\n");
+  (void)printf("\n\t6 :: Staff\n");
+  (void)printf("\n(i) Notice : Press ESC to cancel.\n");
+  (void)ue_nav_new_pos(buff, size);
+}
+
+void ue_update_pos(employee details){
+  (void)remove_from_file(details.id);
+  (void)ve_clean_buffer(details.position, max);
+
+  (void)ue_get_new_pos(details.position, max);
+  (void)put_to_file(details);
+
+  (void)printf("\n\n(i) Notice : Position info was successfully updated.");
+  (void)getch();
+  (void)view_employee(); 
+}
+
+void ue_nav_new_dept(char * buff, int size){
+  for(int i = 0; i < 10; i++){
+    switch((char)getch()){
+      case '1':
+        strcpy(buff, "General");
+        break;
+      case '2':
+        strcpy(buff, "Marketing");
+        break;
+      case '3':
+        strcpy(buff, "Engineering");
+        break;
+      case '4':
+        strcpy(buff, "Design");
+        break;
+      case '5':
+        strcpy(buff, "Logistics");
+        break;
+      case 27:
+        (void)menu();
+      default:
+        continue;
+    }
+    return;
+  }
+  // when return is not triggered
+  (void)printf("\n\n(!) Notice : Too many invalid attempts. Taking you back to menu ...");
+  (void)getch();
+  (void)menu();
+}
+
+void ue_get_new_dept(char * buff, int size){
+  (void)system("cls");
+  (void)printf("\n(i) Notice : Choose Department to update to.\n");
+  (void)printf("\n\t1 :: General");
+  (void)printf("\n\t2 :: Marketing");
+  (void)printf("\n\t3 :: Engineering");
+  (void)printf("\n\t4 :: Design");
+  (void)printf("\n\t5 :: Logistics\n");
+  (void)printf("\n(i) Notice : Press ESC to cancel.\n");
+  (void)ue_nav_new_dept(buff, size);
+}
+
+void ue_update_dept(employee details){
+  (void)remove_from_file(details.id);
+  (void)ve_clean_buffer(details.department, max);
+
+  (void)ue_get_new_dept(details.department, max);
+  (void)put_to_file(details);
+
+  (void)printf("\n\n(i) Notice : Department info was successfully updated.");
+  (void)getch();
+  (void)view_employee(); 
+}
+
+void ue_get_new_lname(char * buff, int size){
+  // give 10 chances
+  for(int i = 0; i < 10; i++){
+    (void)system("cls");
+    // get new first name
+    (void)printf("\nEnter New Last Name : ");
+    (void)get_string_input(buff, size);
+    // check name length
+    if((int)strlen(buff) > 16){
+      (void)printf("\n\n(!) Notice : You could only input up to 16 characters.");
+      if((int)getch() == 27){
+        (void)menu();
+      } else {
+        continue;
+      }
+    } else {
+      // if checks passed
+      return;
+    }
+  }
+}
+
+void ue_get_new_fname(char * buff, int size){
+  // give 10 chances
+  for(int i = 0; i < 10; i++){
+    (void)system("cls");
+    // get new first name
+    (void)printf("\nEnter New First Name : ");
+    (void)get_string_input(buff, size);
+    // check name length
+    if((int)strlen(buff) > 16){
+      (void)printf("\n\n(!) Notice : You could only input up to 16 characters.");
+      if((int)getch() == 27){
+        (void)menu();
+      } else {
+        continue;
+      }
+    } else {
+      // if checks passed
+      return;
+    }
+  }
+  // if return was not triggered
+  (void)printf("(!) Notice : Too many invalid attempts. Returning to menu ...");
+  (void)getch();
+  (void)menu();
+}
+
+void ue_update_name(employee details){
+  (void)remove_from_file(details.id);
+  (void)ve_clean_buffer(details.name, max);
+
+  char fname[max];
+  (void)ue_get_new_fname(fname, max);
+
+  char lname[max];
+  (void)ue_get_new_lname(lname, max);
+
+  (void)strcpy(details.name, fname);
+  (void)strcat(details.name, " ");
+  (void)strcat(details.name, lname);
+
+  (void)put_to_file(details);
+
+  (void)printf("\n\n(i) Notice : Name info was successfully updated.");
+  (void)getch();
+  (void)view_employee(); 
 }
 
 void ue_get_new_id(char * buff, int size){
@@ -100,7 +361,7 @@ void ue_get_new_id(char * buff, int size){
         (void)menu();
       }
       continue;
-    } else if ((bool)id_is_invalid(buff, (int)strlen(buff))){
+    } else if ((bool)ae_id_is_invalid(buff, (int)strlen(buff))){
       (void)printf("\n\n(!) Notice : ID is invalid.");
       if((int)getch() == 27){
         (void)menu();
@@ -119,7 +380,7 @@ void ue_get_new_id(char * buff, int size){
 
 void ue_update_id(employee details){
   (void)remove_from_file(details.id);
-  (void)clean_buffer(details.id, max);
+  (void)ve_clean_buffer(details.id, max);
 
   (void)ue_get_new_id(details.id, max);
   (void)put_to_file(details);
@@ -139,9 +400,11 @@ void ue_navigate_sd(employee details){
         break;
       case '2':
         invalid = false;
+        (void)ue_update_name(details);
         break;
       case '3':
         invalid = false;
+        (void)ue_update_dept(details);
         break;
       case '4':
         invalid = false;
@@ -246,7 +509,7 @@ void ue_get_id(char * id_buff, int id_buff_size){
     (void)printf("\nEnter ID : ");
     (void)get_string_input(id_buff, id_buff_size);
     // check id
-    if((bool)id_is_invalid(id_buff, strlen(id_buff))){
+    if((bool)ae_id_is_invalid(id_buff, strlen(id_buff))){
       (void)printf("\n\n(!) Warning : ID input invalid.");
       if((int)getch() == 27){
         (void)menu();
@@ -279,7 +542,7 @@ void update_employee(){
   // struct to store record details
   employee to_edit;
   // clean struct members first
-  (void)clean_struct_members(&to_edit);
+  (void)ve_clean_struct_members(&to_edit);
   (void)ue_extract_line(id_location, &to_edit);
   // show details of record to be edited
   (void)ue_show_details(to_edit);
@@ -287,41 +550,41 @@ void update_employee(){
   (void)ue_navigate_sd(to_edit);
 }
 
-void print_line(employee details){
+void ve_print_line(employee details){
   (void)printf("\n\t");
 
   (void)printf("%s", details.id);
-  (void)add_space(table.id_w, strlen(details.id));
+  (void)ve_add_space(table.id_w, strlen(details.id));
   
   (void)printf("%s", details.name);
-  (void)add_space(table.name_w, strlen(details.name));
+  (void)ve_add_space(table.name_w, strlen(details.name));
   
   (void)printf("%s", details.department);
-  (void)add_space(table.dept_w, strlen(details.department));
+  (void)ve_add_space(table.dept_w, strlen(details.department));
   
   (void)printf("%s", details.position);
-  (void)add_space(table.pos_w, strlen(details.position));
+  (void)ve_add_space(table.pos_w, strlen(details.position));
   
   (void)printf("%s", details.gender);
-  (void)add_space(table.gender_w, strlen(details.gender));
+  (void)ve_add_space(table.gender_w, strlen(details.gender));
 }
 
-void clean_struct_members(employee * details){
+void ve_clean_struct_members(employee * details){
   // set default size to max
-  clean_buffer(details->id, max);
-  clean_buffer(details->name, max);
-  clean_buffer(details->department, max);
-  clean_buffer(details->position, max);
-  clean_buffer(details->gender, max);
+  ve_clean_buffer(details->id, max);
+  ve_clean_buffer(details->name, max);
+  ve_clean_buffer(details->department, max);
+  ve_clean_buffer(details->position, max);
+  ve_clean_buffer(details->gender, max);
 }
 
-void clean_buffer(char * buffer, int size){
+void ve_clean_buffer(char * buffer, int size){
   for(int i = 0; i < size; i++){
     buffer[i] = '\0';
   }
 }
 
-int retrieve_from_file(){
+int ve_retrieve_from_file(){
   // buffer declaration
   char buff[max];
 
@@ -342,29 +605,29 @@ int retrieve_from_file(){
     // temporarily store in struct   
     employee current_employee;
     // clean struct members
-    (void)clean_struct_members(&current_employee);
+    (void)ve_clean_struct_members(&current_employee);
     
     (void)ue_line_to_struct(buff, (int)strlen(buff), &current_employee);
 
-    (void)print_line(current_employee);
+    (void)ve_print_line(current_employee);
   } 
   (void)fclose(fret);
   return line_count;
 }
 
-void add_space(const int width, int deduct){
+void ve_add_space(const int width, int deduct){
   for(int i = 0; i < (width - deduct); i++){
     (void)printf(" ");
   }
 }
 
-void draw_border(int length){
+void ve_draw_border(int length){
   for(int i = 0; i < length; i++){
     (void)printf("-");
   }
 }
 
-void set_table_dimensions(){
+void ve_set_table_dimensions(){
   // set values for global struct table
   table.id_w = 10;
   table.name_w = 32;
@@ -374,56 +637,56 @@ void set_table_dimensions(){
   table.table_w = (table.id_w + table.name_w + table.dept_w + table.pos_w + table.gender_w);
 }
 
-void write_table_header(){
+void ve_write_table_header(){
   // dimensions
-  (void)set_table_dimensions();
+  (void)ve_set_table_dimensions();
   // top border
   (void)printf("\n\n\t");
-  (void)draw_border(table.table_w);
+  (void)ve_draw_border(table.table_w);
   (void)printf("\n\t");
 
   // print headers, add space to achieve desired width
   char header_1[max] = "ID";
   (void)printf("%s", header_1);
-  (void)add_space(table.id_w, (int)strlen(header_1));
+  (void)ve_add_space(table.id_w, (int)strlen(header_1));
   
   char header_2[max] = "Name";
   (void)printf("%s", header_2);
-  (void)add_space(table.name_w, (int)strlen(header_2));
+  (void)ve_add_space(table.name_w, (int)strlen(header_2));
   
   char header_3[max] = "Department";
   (void)printf("%s", header_3);
-  (void)add_space(table.dept_w, (int)strlen(header_3));
+  (void)ve_add_space(table.dept_w, (int)strlen(header_3));
 
   char header_4[max] = "Position";
   (void)printf("%s", header_4);
-  (void)add_space(table.pos_w, (int)strlen(header_4));
+  (void)ve_add_space(table.pos_w, (int)strlen(header_4));
 
   char header_5[max] = "Gender";
   (void)printf("%s", header_5);
-  (void)add_space(table.gender_w, (int)strlen(header_5));
+  (void)ve_add_space(table.gender_w, (int)strlen(header_5));
 
   // add bottom border for header
   (void)printf("\n\t");
-  (void)draw_border(table.table_w);
+  (void)ve_draw_border(table.table_w);
 }
 
 void view_employee(){
   // this table will be of static size
   (void)system("cls");
-  (void)write_table_header();
+  (void)ve_write_table_header();
   // total retrieved lines from file, prints them as well
-  int ret_lines = (int)retrieve_from_file();
+  int ret_lines = (int)ve_retrieve_from_file();
   // draw bottom border
   (void)printf("\n\n\t");
-  (void)draw_border(table.table_w);
+  (void)ve_draw_border(table.table_w);
   // show total records
   (void)printf("\n\n\tTotal Records: %d", ret_lines);
   (void)getch();
   (void)menu();
 }
 
-void read_employee_gender(char * buff){
+void ae_read_employee_gender(char * buff){
   (void)printf("\n\nEnter Employee Gender:\n");
   (void)printf("\n\t1 :: Male");
   (void)printf("\n\t2 :: Female\n");
@@ -449,7 +712,7 @@ void read_employee_gender(char * buff){
   }
 }
 
-void read_employee_pos(char * buff){
+void ae_read_employee_pos(char * buff){
   (void)printf("\n\nEnter Employee Position:\n");
   (void)printf("\n\t1 :: Dept. Head");
   (void)printf("\n\t2 :: Dept. Deputy Head");
@@ -500,7 +763,7 @@ void read_employee_pos(char * buff){
   }
 }
 
-void read_employee_dept(char * buff){
+void ae_read_employee_dept(char * buff){
   (void)printf("\n\nSelect Employee Department:\n");
   (void)printf("\n\t1 :: General");
   (void)printf("\n\t2 :: Marketing");
@@ -541,7 +804,7 @@ void read_employee_dept(char * buff){
   }
 }
 
-void read_employee_lname(char * buff, const int size){
+void ae_read_employee_lname(char * buff, const int size){
   for(int i = 0; i < 10; i++){
     (void)system("cls");
     (void)printf("\nEnter Employee Last Name: ");
@@ -566,7 +829,7 @@ void read_employee_lname(char * buff, const int size){
   (void)menu();
 }
 
-void read_employee_fname(char * buff, const int size){
+void ae_read_employee_fname(char * buff, const int size){
   for(int i = 0; i < 10; i++){
     (void)system("cls");
     (void)printf("\nEnter Employee First Name: ");
@@ -591,7 +854,7 @@ void read_employee_fname(char * buff, const int size){
   (void)menu();
 }
 
-bool id_is_invalid(char * buff, const int size){
+bool ae_id_is_invalid(char * buff, const int size){
   // valid id input : "123-123"
   if(size > 7 || size < 0){
     return true;
@@ -611,7 +874,7 @@ bool id_is_invalid(char * buff, const int size){
   return false;
 }
 
-void read_employee_id(char * buff, const int size){
+void ae_read_employee_id(char * buff, const int size){
   // ten invalid attempts and the program quits to menu
   for(int i = 0; i < 10; i++){
     (void)system("cls");
@@ -620,7 +883,7 @@ void read_employee_id(char * buff, const int size){
     (void)get_string_input(buff, size);
     // id should only have numbers and dashes
     int len = (int)strlen(buff);
-    if((bool)id_is_invalid(buff, len)){
+    if((bool)ae_id_is_invalid(buff, len)){
       (void)printf("(!) Error: Invalid ID.");
       if((int)getch() == 27){
         (void)menu();
@@ -639,28 +902,28 @@ void read_employee_id(char * buff, const int size){
     else {
       return;
     }
-    clean_buffer(buff, max);
+    ve_clean_buffer(buff, max);
   }
   (void)printf("\n\n(!) Too many invalid inputs. Returning to menu.");
   (void)getch();
   (void)menu();
 }
 
-void get_employee_details(){
+void ae_get_employee_details(){
   (void)system("cls");
   // write input to local variables
   char employee_id[max];
-  (void)read_employee_id(employee_id, max);
+  (void)ae_read_employee_id(employee_id, max);
   char employee_fname[max];
-  (void)read_employee_fname(employee_fname, max);
+  (void)ae_read_employee_fname(employee_fname, max);
   char employee_lname[max];
-  (void)read_employee_lname(employee_lname, max);
+  (void)ae_read_employee_lname(employee_lname, max);
   char employee_dept[max];
-  (void)read_employee_dept(employee_dept);
+  (void)ae_read_employee_dept(employee_dept);
   char employee_pos[max];
-  (void)read_employee_pos(employee_pos);
+  (void)ae_read_employee_pos(employee_pos);
   char employee_gender[max];
-  (void)read_employee_gender(employee_gender);
+  (void)ae_read_employee_gender(employee_gender);
   // then clone to struct
   employee new_employee;
   (void)strcpy(new_employee.id, employee_id);
@@ -684,7 +947,7 @@ bool invalid_character_exists(char * string, const int size){
   return false;
 }
 
-int get_input_count(){
+int ae_get_input_count(){
     // count how many inputs are needed
     system("cls");
     // echo prompt
@@ -720,10 +983,11 @@ int get_input_count(){
 
 void add_employee(){
     // read how many inputs are needed (10 max)
-    int input_count = (int)get_input_count();
+    int input_count = (int)ae_get_input_count
+();
     // then call this function iteratively
     for(int i = 0; i < input_count; i++){
-      (void)get_employee_details();
+      (void)ae_get_employee_details();
     }
     // clear screen for affirmation message
     (void)system("cls");
