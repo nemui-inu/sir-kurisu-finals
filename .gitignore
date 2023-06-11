@@ -52,5 +52,6 @@ Mkfile.old
 dkms.conf
 
 # Files
-files
+.vscode
+vscode
 *.csv
